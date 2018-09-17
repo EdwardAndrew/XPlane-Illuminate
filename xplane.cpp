@@ -3,7 +3,13 @@
 #include <vector>
 #include "CUESDK.h"
 #include "XPLMDataAccess.h"
+#include "XPLMUtilities.h"
 #include "XPLMProcessing.h"
+#include "XPLMMenus.h"
+#include "XPWidgets.h"
+#include "XPWidgetDefs.h"
+#include "XPWidgetUtils.h"
+#include "XPStandardWidgets.h"
 
 int bgRed = 255, bgGreen = 178, bgBlue = 8;
 
@@ -12,18 +18,32 @@ XPLMDataRef GearHandleDown = NULL;
 
 float GearLightingFLCB(float elapsedMe, float elapsedSim, int counter, void * refcon); 
 
+int g_MenuItem;
+XPWidgetID IlluminateWidget = NULL;
+XPWidgetID IlluminateWindow = NULL;
+void IlluminateMenuHandler(void *, void*);
+void CreateIlluminateWidget(int x1, int y1, int w, int h);
+int IlluminateHandler(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
+
 PLUGIN_API int XPluginStart(
 						char *		outName,
 						char *		outSig,
 						char *		outDesc)
 {
-		int			mySubMenuItem;
+	XPLMMenuID PluginMenu;
+	int		   PluginSubMenuItem;
 
 	/* Provide our plugin's profile to the plugin system. */
 	strcpy(outName, "Illuminate");
 	strcpy(outSig, "edwardandrew.xplane.illuminate");
 	strcpy(outDesc, "Interactive keyboard illumination.");
-	
+
+	// Create menu	
+	PluginSubMenuItem = XPLMAppendMenuItem(XPLMFindPluginsMenu(), "Illuminate", NULL, 1);
+	PluginMenu = XPLMCreateMenu("Illuminate", XPLMFindPluginsMenu(), PluginSubMenuItem, IlluminateMenuHandler, NULL);
+	XPLMAppendMenuItem(PluginMenu, "Illuminate", (void *)+1, 1);
+	g_MenuItem = 0;
+
 	CorsairPerformProtocolHandshake();
 
 	if (CorsairGetLastError())
@@ -59,6 +79,12 @@ PLUGIN_API void	XPluginStop(void)
 	XPLMUnregisterFlightLoopCallback(GearLightingFLCB, NULL);
 
 	CorsairReleaseControl(CAM_ExclusiveLightingControl);
+
+	if (g_MenuItem == 1)
+	{
+		XPDestroyWidget(IlluminateWidget, 1);
+		g_MenuItem = 0;
+	}
 }
 
 PLUGIN_API void XPluginDisable(void)
@@ -66,6 +92,12 @@ PLUGIN_API void XPluginDisable(void)
 	XPLMUnregisterFlightLoopCallback(GearLightingFLCB, NULL);
 
 	CorsairReleaseControl(CAM_ExclusiveLightingControl);
+
+	if (g_MenuItem == 1)
+	{
+		XPDestroyWidget(IlluminateWidget, 1);
+		g_MenuItem = 0;
+	}
 }
 
 PLUGIN_API int XPluginEnable(void)
@@ -171,3 +203,53 @@ float GearLightingFLCB(
 	return 0.1f;
 }
 
+
+void IlluminateMenuHandler(void * inMenuRef, void * inItemRef)
+{
+	switch ((int)inItemRef)
+	{
+		case 1: 
+			if (g_MenuItem == 0)
+			{
+				CreateIlluminateWidget(500, 500, 500, 500);
+				XPShowWidget(IlluminateWidget);
+				g_MenuItem = 1;
+			}
+			else 
+			{
+				if (!XPIsWidgetVisible(IlluminateWidget)) {
+					XPShowWidget(IlluminateWidget);
+				}
+			}
+	}
+}
+
+void CreateIlluminateWidget(int x, int y, int w, int h)
+{
+	int Index;
+	int x2 = x + w;
+	int y2 = y - h;
+
+	IlluminateWidget = XPCreateWidget(x, y, x2, y2,
+		1,
+		"Illuminate",
+		1,
+		NULL,
+		xpWidgetClass_MainWindow);
+
+	XPSetWidgetProperty(IlluminateWidget, xpProperty_MainWindowHasCloseBoxes, 1);
+	XPAddWidgetCallback(IlluminateWidget, IlluminateHandler);
+}
+
+int IlluminateHandler(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2)
+{
+	if (inMessage == xpMessage_CloseButtonPushed)
+	{
+		if (g_MenuItem == 1)
+		{
+			XPHideWidget(IlluminateWidget);
+		}
+		return 1;
+	}
+	return 0;
+}
