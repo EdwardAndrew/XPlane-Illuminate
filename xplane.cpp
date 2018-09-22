@@ -2,6 +2,7 @@
 #include <string.h>
 #include <vector>
 #include "CUESDK.h"
+#include <fstream>
 #include "XPLMDataAccess.h"
 #include "XPLMUtilities.h"
 #include "XPLMProcessing.h"
@@ -10,13 +11,21 @@
 #include "XPWidgetDefs.h"
 #include "XPWidgetUtils.h"
 #include "XPStandardWidgets.h"
+#include "json.hpp"
+#include "Condition.h"
+
+using json = nlohmann::json;
+
+const std::string IlluminateDir = "Resources/plugins/XPlane-Illuminate/";
+json config;
+std::vector<Condition> conditions;
 
 int bgRed = 255, bgGreen = 178, bgBlue = 8;
 
 XPLMDataRef GearDeployedDataRef = NULL;
 XPLMDataRef GearHandleDown = NULL;
 
-float GearLightingFLCB(float elapsedMe, float elapsedSim, int counter, void * refcon); 
+float IlluminateFLCB(float elapsedMe, float elapsedSim, int counter, void * refcon); 
 
 int g_MenuItem;
 XPWidgetID IlluminateWidget = NULL;
@@ -24,6 +33,7 @@ XPWidgetID IlluminateWindow = NULL;
 void IlluminateMenuHandler(void *, void*);
 void CreateIlluminateWidget(int x1, int y1, int w, int h);
 int IlluminateHandler(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
+bool evaluateCondition(double value, ConditionType cType, double dataRefValue);
 
 PLUGIN_API int XPluginStart(
 						char *		outName,
@@ -38,10 +48,47 @@ PLUGIN_API int XPluginStart(
 	strcpy(outSig, "edwardandrew.xplane.illuminate");
 	strcpy(outDesc, "Interactive keyboard illumination.");
 
+	// Load config file
+	std::ifstream t(IlluminateDir + "illuminate.conf");
+	t >> config;
+	t.close();
+
+	// Populate conditions array
+	for each (auto condition in config["conditions"])
+	{
+		Condition c = Condition();
+		c.dataRefString = condition["dataRef"].get<std::string>();
+		c.dataRefName = condition["name"].get<std::string>();
+		c.value = condition["value"].get<double>();
+
+		string match = condition["match"].get<std::string>();
+		if (match == std::string("less_than"))
+		{
+			c.conditionType = ConditionType::less_than;
+		}
+		else if (match == std::string("greater_than"))
+		{
+			c.conditionType = ConditionType::greater_than;
+		}
+		else {
+			c.conditionType = ConditionType::exactly;
+		}
+
+		c.dataRef = XPLMFindDataRef(c.dataRefString.c_str());
+		if (c.dataRef == NULL) continue;
+		c.dataType = XPLMGetDataRefTypes(c.dataRef);
+
+		if (c.dataType == xplmType_FloatArray || c.dataType == xplmType_IntArray) {
+			c.index = condition["index"].get<int>();
+		}
+
+		conditions.push_back(c);
+	}
+
 	// Create menu	
 	PluginSubMenuItem = XPLMAppendMenuItem(XPLMFindPluginsMenu(), "Illuminate", NULL, 1);
 	PluginMenu = XPLMCreateMenu("Illuminate", XPLMFindPluginsMenu(), PluginSubMenuItem, IlluminateMenuHandler, NULL);
-	XPLMAppendMenuItem(PluginMenu, "Illuminate", (void *)+1, 1);
+	XPLMAppendMenuItem(PluginMenu, "Settings", (void *)+1, 1);
 	g_MenuItem = 0;
 
 	CorsairPerformProtocolHandshake();
@@ -56,8 +103,8 @@ PLUGIN_API int XPluginStart(
 	GearDeployedDataRef = XPLMFindDataRef("sim/flightmodel2/gear/deploy_ratio");
 	GearHandleDown = XPLMFindDataRef("sim/cockpit/switches/gear_handle_status");
 
-	XPLMRegisterFlightLoopCallback(GearLightingFLCB, 0.0, NULL);
-	XPLMSetFlightLoopCallbackInterval(GearLightingFLCB, 0.01, 1, NULL);
+	XPLMRegisterFlightLoopCallback(IlluminateFLCB, 0.0, NULL);
+	XPLMSetFlightLoopCallbackInterval(IlluminateFLCB, 0.01, 1, NULL);
 	
 	/* Only return that we initialized correctly if we found the data ref. */
 	if (GearDeployedDataRef == NULL) return 0;
@@ -76,8 +123,7 @@ PLUGIN_API int XPluginStart(
 
 PLUGIN_API void	XPluginStop(void)
 {
-	XPLMUnregisterFlightLoopCallback(GearLightingFLCB, NULL);
-
+	XPLMUnregisterFlightLoopCallback(IlluminateFLCB, NULL);
 	CorsairReleaseControl(CAM_ExclusiveLightingControl);
 
 	if (g_MenuItem == 1)
@@ -89,8 +135,7 @@ PLUGIN_API void	XPluginStop(void)
 
 PLUGIN_API void XPluginDisable(void)
 {
-	XPLMUnregisterFlightLoopCallback(GearLightingFLCB, NULL);
-
+	XPLMUnregisterFlightLoopCallback(IlluminateFLCB, NULL);
 	CorsairReleaseControl(CAM_ExclusiveLightingControl);
 
 	if (g_MenuItem == 1)
@@ -104,8 +149,8 @@ PLUGIN_API int XPluginEnable(void)
 {
 	CorsairRequestControl(CAM_ExclusiveLightingControl);
 
-	XPLMRegisterFlightLoopCallback(GearLightingFLCB, 0.0, NULL);
-	XPLMSetFlightLoopCallbackInterval(GearLightingFLCB, 0.01, 1, NULL);
+	XPLMRegisterFlightLoopCallback(IlluminateFLCB, 0.0, NULL);
+	XPLMSetFlightLoopCallbackInterval(IlluminateFLCB, 0.01, 1, NULL);
 
 	return 1;
 }
@@ -117,87 +162,59 @@ PLUGIN_API void XPluginReceiveMessage(
 {
 }
 
-float GearLightingFLCB(
+float IlluminateFLCB(
 	float                inElapsedSinceLastCall,
 	float                inElapsedTimeSinceLastFlightLoop,
 	int                  inCounter,
 	void *               inRefcon)
 {
 
-	float gearDeployRatio[3];
-	XPLMGetDatavf(GearDeployedDataRef,&gearDeployRatio[0],0,3);
+   //Evaluate all datarefs
 
-	CorsairLedColor GDeployed{ CLK_G,0,255,0 };
-	CorsairLedColor GNotDeployed{ CLK_G, 255, 0, 0 };
-	CorsairLedColor GOff{ CLK_G, bgRed,bgGreen, bgBlue };
+	std::map<std::string, bool> conditionResults;
 
-	CorsairLedColor VDeployed{ CLK_V,0,255,0 };
-	CorsairLedColor VNotDeployed{ CLK_V, 255, 0, 0 };
-	CorsairLedColor VOff{ CLK_V, bgRed,bgGreen, bgBlue };
-
-	CorsairLedColor BDeployed{ CLK_B,0,255,0 };
-	CorsairLedColor BNotDeployed{ CLK_B, 255, 0, 0 };
-	CorsairLedColor BOff{ CLK_B, bgRed,bgGreen, bgBlue };
-
-	bool gearHandleDown = XPLMGetDatai(GearHandleDown);
-
-	if (gearHandleDown)
+	for each (Condition c in conditions)
 	{
-		if (gearDeployRatio[0] < 1.0f)
-		{
-			CorsairSetLedsColors(1, &GNotDeployed);
+		if (c.dataRef == NULL) continue;
+		switch (c.dataType) {
+			case xplmType_Int:
+				conditionResults[c.dataRefName] = evaluateCondition(c.value, c.conditionType, (XPLMGetDatai(c.dataRef) != 0));
+				break;
+			case xplmType_FloatArray:
+				float dataRefValue;
+				XPLMGetDatavf(c.dataRef, &dataRefValue, 0, 1);
+				conditionResults[c.dataRefName] = evaluateCondition(c.value, c.conditionType, dataRefValue);
+				break;
 		}
-		else
-		{
-			CorsairSetLedsColors(1, &GDeployed);
-		}
-
-		if (gearDeployRatio[1] < 1.0f)
-		{
-			CorsairSetLedsColors(1, &VNotDeployed);
-		}
-		else
-		{
-			CorsairSetLedsColors(1, &VDeployed);
-		}
-
-		if (gearDeployRatio[2] < 1.0f)
-		{
-			CorsairSetLedsColors(1, &BNotDeployed);
-		}
-		else
-		{
-			CorsairSetLedsColors(1, &BDeployed);
-		}
-
 	}
-	else
+
+	for each (auto key in config["keys"])
 	{
-		if (gearDeployRatio[0] > 0.0f)
+		bool result = true;
+
+		for(int i = 0; i < key["conditions"].size(); i++)
 		{
-			CorsairSetLedsColors(1, &GNotDeployed);
-		}
-		else
-		{
-			CorsairSetLedsColors(1, &GOff);
+			auto condition = key["conditions"][i];
+			string conditionString = condition.get<std::string>();
+			if (conditionResults.find(conditionString) != conditionResults.end())
+			{
+				if (!conditionResults[conditionString]) {
+					result = false;
+					break;
+				}
+			}
 		}
 
-		if (gearDeployRatio[1] > 0.0f)
-		{
-			CorsairSetLedsColors(1, &VNotDeployed);
-		}
-		else
-		{
-			CorsairSetLedsColors(1, &VOff);
-		}
+		if (result) {
+			char k = key["key"].get<std::string>().c_str()[0];
 
-		if (gearDeployRatio[2] > 0.0f)
-		{
-			CorsairSetLedsColors(1, &BNotDeployed);
-		}
-		else
-		{
-			CorsairSetLedsColors(1, &BOff);
+			CorsairLedColor keyColor{
+				CorsairGetLedIdForKeyName(k),
+				key["color"]["r"].get<int>(),
+				key["color"]["g"].get<int>(),
+				key["color"]["b"].get<int>()
+			};
+			CorsairSetLedsColors(1, &keyColor);
 		}
 	}
 	return 0.1f;
@@ -238,6 +255,14 @@ void CreateIlluminateWidget(int x, int y, int w, int h)
 		xpWidgetClass_MainWindow);
 
 	XPSetWidgetProperty(IlluminateWidget, xpProperty_MainWindowHasCloseBoxes, 1);
+
+	for (int i = 0; i < conditions.size(); i++)
+	{
+		Condition c = conditions[i];
+		XPWidgetID btn = XPCreateWidget(x+10, y-(40*(i+1)), x + 400, y - (60 *(i +1)), 1, std::to_string(c.dataType).c_str(), 0, IlluminateWidget, xpWidgetClass_TextField);
+		XPSetWidgetProperty(btn, xpTextEntryField, 0);
+	}
+
 	XPAddWidgetCallback(IlluminateWidget, IlluminateHandler);
 }
 
@@ -252,4 +277,19 @@ int IlluminateHandler(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t i
 		return 1;
 	}
 	return 0;
+}
+
+bool evaluateCondition(double value, ConditionType cType, double dataRefValue)
+{
+	switch (cType) {
+	case ConditionType::exactly:
+			return value == dataRefValue;
+	case ConditionType::less_than:
+		return dataRefValue < value;
+
+	case ConditionType::greater_than:
+		return dataRefValue > value;
+	}
+
+	return false;
 }
