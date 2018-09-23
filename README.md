@@ -1,3 +1,7 @@
+# This weeks release
+[Download from WeTransfer](https://we.tl/t-FeMsijs7PX)
+
+
 # XPlane-Illuminate
 XPlane-Illuminate is an XPlane Plugin that aims to provide functionality for users to add their own colour mappings to their RGB keyboards, powered by XPlane DataRefs.
 
