@@ -32,7 +32,12 @@ Select from the top Menu `Build` -> `Build Solution`.
 Copy the generated `plugins` folder to your XPlane installation `Resources/` folder.
 
 ## Configuration
+I appreciate the configuration may be a little tedious at the moment, and I'd love to hear feedback for improving it. I would also like to make a nice widget for configuring the plugin directly from XPlane.
+
+
 When X-Plane is launched, Illuminate will look inside it's folder at `Resources/plugins/XPlane-Illuminate` for file named `illuminate.json`. This file is needed and contains all the information for the plugin.
+
+[Here is an example configuration file.](https://gist.github.com/EdwardAndrew/f3f50df11b2dfad78b51f5055931c09f)
 
 This file must be valid json, so I recommend using a [JSON validator](https://jsonformatter.curiousconcept.com) just to make sure it's okay before attempting to load it once you've finished editing it.
 
