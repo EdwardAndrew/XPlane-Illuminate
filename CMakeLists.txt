@@ -4,13 +4,18 @@ SET(CMAKE_CONFIGURATION_TYPES Release)
 project(${PROJECT_NAME})
 SET(XPlane_11_SDK_PATH "C:/XPlaneSDK" CACHE PATH "XPlane 11 SDK Path")
 SET(CUESDK_PATH "C:/CUESDK" CACHE PATH "XPlane 11 SDK Path")
-SET(NLOHMANN_JSON_PATH "C:/NLOHMANN_JSON_PATH" CACHE PATH "nlohmann json path")
+SET(NLOHMANN_JSON_PATH "C:/NLOHMANN_JSON_PATH" CACHE PATH "nlohmann/json path")
 SET(HEADER_FILES
 	Condition.h
+	Config.h
+	Key.h
+	Illuminate.h
 )
 SET(SOURCES
 	xplane.cpp
 	Condition.cpp
+	Config.cpp
+	Illuminate.cpp
 )
 
 
