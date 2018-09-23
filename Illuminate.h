@@ -18,7 +18,5 @@ private:
 	Config config;
 	std::map<CorsairLedId, CorsairLedColor> previousColors;
 	void setBackgroundColor();
-	CorsairLedPositions* ledPositions;
-	std::vector<CorsairLedColor> bgKeys;
 };
 

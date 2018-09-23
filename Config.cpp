@@ -12,22 +12,35 @@ bool Config::Load() {
 	nlohmann::json js;
 
 	std::ifstream t(DirPath + "illuminate.conf");
-	t >> js;
+	if (t.is_open())
+	{
+		t >> js;
+	}
 	t.close();
 
 	BackgroundColor[0] = 0;
 	BackgroundColor[1] = 0;
 	BackgroundColor[2] = 0;
 
-	// Set background color
-	if (js.find("background") != js.end())
+	// Load Colors
+	if (js["colors"].is_array())
 	{
-		if (!js["background"]["color"].is_null())
+		for each (auto color in js["colors"])
 		{
-			auto bgColor = js["background"]["color"];
-			if (bgColor["r"].is_number()) BackgroundColor[0] = bgColor["r"].get<int>();
-			if (bgColor["g"].is_number()) BackgroundColor[1] = bgColor["g"].get<int>();
-			if (bgColor["b"].is_number()) BackgroundColor[2] = bgColor["b"].get<int>();
+			if (color["name"].is_string()) {
+				Color c = Color();
+				c.name = color["name"].get<std::string>();
+				if (color["r"].is_number()) c.r = color["r"].get<int>();
+				if (color["g"].is_number()) c.g = color["g"].get<int>();
+				if (color["b"].is_number()) c.b = color["b"].get<int>();
+				colors[c.name] = c;
+
+				if (c.name.compare("background") == 0) {
+					BackgroundColor[0] = c.r;
+					BackgroundColor[1] = c.g;
+					BackgroundColor[2] = c.b;
+				}
+			}
 		}
 	}
 
@@ -94,12 +107,20 @@ bool Config::Load() {
 				char tmp = key["key"].get<std::string>().c_str()[0];
 				k.LedId = CorsairGetLedIdForKeyName(tmp);
 			}
+			else if (key["key"].is_number())
+			{
+				k.LedId = (CorsairLedId)key["key"].get<int>();
+			}
 
 			if (key["color"].is_string())
 			{
-				k.Color[0] = BackgroundColor[0];
-				k.Color[1] = BackgroundColor[1];
-				k.Color[2] = BackgroundColor[2];
+				if (colors.find(key["color"].get<std::string>()) != colors.end())
+				{
+					Color c = colors[key["color"].get<std::string>()];
+					k.Color[0] = c.r;
+					k.Color[1] = c.g;
+					k.Color[2] = c.b;
+				}
 			}
 			else
 			{

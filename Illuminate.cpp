@@ -39,8 +39,12 @@ float Illuminate::FLCB(float inElapsedSinceLastCall, float inElapsedTimeSinceLas
 			break;
 		case xplmType_FloatArray:
 			float dataRefValue;
-			XPLMGetDatavf(c.dataRef, &dataRefValue, 0, 1);
+			XPLMGetDatavf(c.dataRef, &dataRefValue, c.index, 1);
 			conditionResults[c.dataRefName] = c.Evaluate(dataRefValue);
+			break;
+
+		case xplmType_Float:
+			conditionResults[c.dataRefName] = c.Evaluate(XPLMGetDataf(c.dataRef));
 			break;
 		}
 	}
@@ -81,8 +85,8 @@ float Illuminate::FLCB(float inElapsedSinceLastCall, float inElapsedTimeSinceLas
 			CorsairLedColor previousColor = previousColors[color.ledId];
 			int r = previousColor.r, g = previousColor.g, b = previousColor.b;
 			r -= color.r;
-			g -= previousColor.g;
-			b -= previousColor.b;
+			g -= color.g;
+			b -= color.b;
 			if ((r + g + b) != 0) {
 				changedColors.push_back(color);
 			}
@@ -92,7 +96,7 @@ float Illuminate::FLCB(float inElapsedSinceLastCall, float inElapsedTimeSinceLas
 		}
 	}
 	// Update LEDs with new colors.
-	CorsairSetLedsColors(changedColors.size(), &changedColors[0]);
+	CorsairSetLedsColors(corsairLEDColors.size(), &corsairLEDColors[0]);
 
 	// Set previous colors to new colors.
 	previousColors.clear();
@@ -110,7 +114,8 @@ void Illuminate::ReloadConfig() {
 }
 
 void Illuminate::setBackgroundColor() {
-	ledPositions = CorsairGetLedPositions();
+	CorsairLedPositions* ledPositions = CorsairGetLedPositions();
+	vector<CorsairLedColor> bgKeys;
 	for (int ledIndex = 0; ledIndex < ledPositions->numberOfLed; ledIndex++)
 	{
 		bgKeys.push_back(CorsairLedColor{ ledPositions->pLedPosition[ledIndex].ledId , config.BackgroundColor[0], config.BackgroundColor[1], config.BackgroundColor[2] });

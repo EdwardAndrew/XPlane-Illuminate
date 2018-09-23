@@ -10,12 +10,16 @@ SET(HEADER_FILES
 	Config.h
 	Key.h
 	Illuminate.h
+	Color.h
+        Mapping.h
 )
 SET(SOURCES
 	xplane.cpp
 	Condition.cpp
 	Config.cpp
 	Illuminate.cpp
+	Color.cpp
+        Mapping.cpp
 )
 
 

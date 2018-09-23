@@ -3,6 +3,8 @@
 #include <vector>
 #include "Condition.h"
 #include "Key.h"
+#include "Mapping.h"
+#include"Color.h"
 #include "json.hpp"
 
 struct CorsairLedColor;
@@ -16,5 +18,6 @@ public:
 	string ConfigFileName = "illuminate.conf";
 	std::vector<Condition> conditions;
 	std::vector<Key> keys;
+	std::map<std::string, Color> colors;
 	int BackgroundColor[3];
 };
