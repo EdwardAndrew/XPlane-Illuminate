@@ -14,14 +14,13 @@ enum ConditionType{
 class Condition
 {
 public:
-	Condition();
-	~Condition();
+	bool Evaluate(double);
 	string dataRefString;
 	string dataRefName;
 	XPLMDataRef dataRef = NULL;
 	XPLMDataTypeID dataType;
 	double value;
 	ConditionType conditionType;
-	int index;;
+	int index;
 };
 
