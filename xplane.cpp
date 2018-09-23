@@ -108,7 +108,7 @@ void IlluminateMenuHandler(void * inMenuRef, void * inItemRef)
 			illuminate.ReloadConfig();
 		break;
 
-		case 2: 
+		default: 
 			if (g_MenuItem == 0)
 			{
 				CreateIlluminateWidget(500, 500, 500, 500);

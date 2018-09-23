@@ -10,6 +10,7 @@ bool Config::Load() {
 
 	// Load js file
 	nlohmann::json js;
+
 	std::ifstream t(DirPath + "illuminate.conf");
 	t >> js;
 	t.close();
