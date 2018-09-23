@@ -45,6 +45,7 @@ Currently there are 3 main parts to the configuration file:
 
 ### Colors
 This is an array.
+
 Colors should be written as objects with the following format:
 ```
 {
@@ -58,6 +59,7 @@ A color with the name `background` is expected, this is used as a background col
 
 ### Conditions
 This is is an array.
+
 A conditon will have one of the following syntax depending on it's DataRef Type.
 If the dataRef type is an Array it will need to know which index to use the value from:
 ```
@@ -79,3 +81,19 @@ or if the dataRef is not an array we do not need the index:
 }
 ```
 You can find out more about XPlane DataRefs including which ones are Arrays [here](http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html)
+### Keys
+This is an Array
+
+Keys currently use the following format:
+```
+{
+   "conditions": [
+    text     // Condition name you gave the condition in the Condition's array
+   ],
+   "key": text or integer, // eg, "w" or 93
+   "color": text // Color name you specifed in the Colors  section, eg "red"
+}
+```
+You can enter either the single character of the key you wish to use and the plugin will attempt to locate the correct key, or use a number to more explicity state the key.
+
+[Here is the full list of CorsairKeyCodes which this file uses for the time being](https://gist.github.com/EdwardAndrew/28ea357712846e7e2075a8cda8e16513)
