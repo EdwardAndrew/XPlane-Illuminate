@@ -3,7 +3,7 @@ XPlane-Illuminate is an XPlane Plugin that aims to provide functionality for use
 
 ## Compatibility
 Keyboards:
-- At the moment, only Corsair RGB keyboards are supported, however in the future I would also like to add more keyboards.
+- At the moment, only Corsair RGB keyboards are supported, however in the future I would also like to add more brands.
 
 Operating Systems:
 - Currently supported only on Windows and tested only on Windows 10.
@@ -16,10 +16,12 @@ If you're unfamiliar with generating project files from `CMakeLists.txt` I sugge
 You will need the following dependencies:
 - [XPlane-11 SDK 3.0.1](https://developer.x-plane.com/sdk/plugin-sdk-downloads/)
 - [Corsair CUE SDK v1.15.28](http://forum.corsair.com/v3/showthread.php?t=156813)
+- [nlohmann/json](https://github.com/nlohmann/json)
 
 Set the following key values in CMake:
 - `CUESDK_PATH`
 - `XPlane_11_SDK_PATH`
+- `NLOHMANN/JSON PATH`
 
 Select `Configure` and chose `Visual Studio 15 2017 Win64`. Then select `Generate`.
 
@@ -28,3 +30,52 @@ Navigate to the folder where you built the solution file to, and open the soluti
 Select from the top Menu `Build` -> `Build Solution`.
 
 Copy the generated `plugins` folder to your XPlane installation `Resources/` folder.
+
+## Configuration
+When X-Plane is launched, Illuminate will look inside it's folder at `Resources/plugins/XPlane-Illuminate` for file named `illuminate.json`. This file is needed and contains all the information for the plugin.
+
+This file must be valid json, so I recommend using a [JSON validator](https://jsonformatter.curiousconcept.com) just to make sure it's okay before attempting to load it once you've finished editing it.
+
+As the plugin is still in development, this file is likely to change from time to time.
+
+Currently there are 3 main parts to the configuration file:
+- colors 
+- conditions
+- keys
+
+### Colors
+This is an array.
+Colors should be written as objects with the following format:
+```
+{
+  "name": text,
+  "r": number,
+  "g": number,
+  "b": number
+}
+```
+A color with the name `background` is expected, this is used as a background color for the rest of the keyboard, any other colors names you like can be added here and used later in the file.
+
+### Conditions
+This is is an array.
+A conditon will have one of the following syntax depending on it's DataRef Type.
+If the dataRef type is an Array it will need to know which index to use the value from:
+```
+{
+ "name": text,
+ "dataRef": text,
+ "index": integer,
+ "match": "exactly" or "less_than" or "greater_than",
+ "value": number
+}
+```
+or if the dataRef is not an array we do not need the index:
+```
+{
+  "name": text,
+  "dataRef": text,
+  "match": "exactly" or "less_than" or "greater_than",
+  "value": number
+}
+```
+You can find out more about XPlane DataRefs including which ones are Arrays [here](http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html)
