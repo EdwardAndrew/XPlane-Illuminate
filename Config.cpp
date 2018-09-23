@@ -46,7 +46,7 @@ bool Config::Load() {
 
 	if (js["conditions"].is_array())
 	{
-		// Populate conditions 
+		// Load conditions 
 		for each (auto condition in js["conditions"])
 		{
 			Condition c = Condition();
@@ -88,7 +88,7 @@ bool Config::Load() {
 
 	if (js["keys"].is_array())
 	{
-		//Populate keys 
+		// Load keys 
 		for each (auto key in js["keys"])
 		{
 			Key k = Key();

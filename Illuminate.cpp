@@ -29,22 +29,29 @@ void Illuminate::Disable() {
 
 float Illuminate::FLCB(float inElapsedSinceLastCall, float inElapsedTimeSinceLastFlightLoop, int inCounter, void* inRefcon) {
 	// Evaluate all datarefs.
-	std::map<std::string, bool> conditionResults;
+	std::map<std::string, bool> results;
 	for each (Condition c in config.conditions)
 	{
 		if (c.dataRef == NULL) continue;
 		switch (c.dataType) {
 		case xplmType_Int:
-			conditionResults[c.dataRefName] = c.Evaluate((XPLMGetDatai(c.dataRef) != 0));
+			results[c.dataRefName] = c.Evaluate((XPLMGetDatai(c.dataRef) != 0));
+			break;
+		case xplmType_IntArray:
+			int intVal;
+			XPLMGetDatavi(c.dataRef, &intVal, c.index, 1);
+			results[c.dataRefName] = c.Evaluate(intVal);
+			break;
+		case xplmType_Float:
+			results[c.dataRefName] = c.Evaluate(XPLMGetDataf(c.dataRef));
 			break;
 		case xplmType_FloatArray:
-			float dataRefValue;
-			XPLMGetDatavf(c.dataRef, &dataRefValue, c.index, 1);
-			conditionResults[c.dataRefName] = c.Evaluate(dataRefValue);
+			float fVal;
+			XPLMGetDatavf(c.dataRef, &fVal, c.index, 1);
+			results[c.dataRefName] = c.Evaluate(fVal);
 			break;
-
-		case xplmType_Float:
-			conditionResults[c.dataRefName] = c.Evaluate(XPLMGetDataf(c.dataRef));
+		case xplmType_Double:
+			results[c.dataRefName] = c.Evaluate(XPLMGetDatad(c.dataRef));
 			break;
 		}
 	}
@@ -57,9 +64,9 @@ float Illuminate::FLCB(float inElapsedSinceLastCall, float inElapsedTimeSinceLas
 		for (int i = 0; i < key.conditions.size(); i++)
 		{
 			string condition = key.conditions[i];
-			if (conditionResults.find(condition) != conditionResults.end())
+			if (results.find(condition) != results.end())
 			{
-				if (!conditionResults[condition]) {
+				if (!results[condition]) {
 					result = false;
 					break;
 				}
