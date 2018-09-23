@@ -66,9 +66,20 @@ bool Config::Load() {
 		char tmp = key["key"].get<std::string>().c_str()[0];
 		k.LedId = CorsairGetLedIdForKeyName(tmp);
 
-		k.Color[0] = key["color"]["r"].get<int>();
-		k.Color[1] = key["color"]["g"].get<int>();
-		k.Color[2] = key["color"]["b"].get<int>();
+		if (key["color"].is_string())
+		{
+			k.Color[0] = BackgroundColor[0];
+			k.Color[1] = BackgroundColor[1];
+			k.Color[2] = BackgroundColor[2];
+		}
+		else
+		{
+	  		k.Color[0] = key["color"]["r"].get<int>();
+			k.Color[1] = key["color"]["g"].get<int>();
+			k.Color[2] = key["color"]["b"].get<int>();
+		}
+
+
 
 		keys.push_back(k);
 	}
