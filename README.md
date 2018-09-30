@@ -8,6 +8,9 @@ Keyboards:
 Operating Systems:
 - Currently supported only on Windows and tested only on Windows 10.
 ## Getting Started 
+NOTE: You need to put the `CUESDK.x64_2013.dll` file into your XPlane installation folder (Where XPlane.exe is) for the plugin to work.
+### Binary
+[Download from WeTransfer](https://we.tl/t-FeMsijs7PX)
 ### From Source
 You will need [Visual Studio 2017](https://docs.microsoft.com/en-us/visualstudio/install/install-visual-studio?view=vs-2017) with Windows SDK.
 
