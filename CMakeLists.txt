@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-SET(PROJECT_NAME XPlane-Illuminate)
+SET(PROJECT_NAME Illuminate)
 SET(CMAKE_CONFIGURATION_TYPES Release)
 project(${PROJECT_NAME})
 SET(XPlane_11_SDK_PATH "C:/XPlaneSDK" CACHE PATH "XPlane 11 SDK Path")
@@ -11,7 +11,6 @@ SET(HEADER_FILES
 	Key.h
 	Illuminate.h
 	Color.h
-        Mapping.h
 )
 SET(SOURCES
 	xplane.cpp
@@ -19,7 +18,6 @@ SET(SOURCES
 	Config.cpp
 	Illuminate.cpp
 	Color.cpp
-        Mapping.cpp
 )
 
 

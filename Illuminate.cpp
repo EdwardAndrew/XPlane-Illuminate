@@ -35,7 +35,7 @@ float Illuminate::FLCB(float inElapsedSinceLastCall, float inElapsedTimeSinceLas
 		if (c.dataRef == NULL) continue;
 		switch (c.dataType) {
 		case xplmType_Int:
-			results[c.dataRefName] = c.Evaluate((XPLMGetDatai(c.dataRef) != 0));
+			results[c.dataRefName] = c.Evaluate(XPLMGetDatai(c.dataRef));
 			break;
 		case xplmType_IntArray:
 			int intVal;

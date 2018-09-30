@@ -14,7 +14,7 @@ class Config {
 
 public:
 	bool Load();
-	string DirPath = "Resources/plugins/XPlane-Illuminate/";
+	string DirPath = "Resources/plugins/Illuminate/";
 	string ConfigFileName = "illuminate.conf";
 	std::vector<Condition> conditions;
 	std::vector<Key> keys;
