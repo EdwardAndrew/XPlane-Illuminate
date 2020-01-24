@@ -3,7 +3,7 @@
 #include <vector>
 #include "Condition.h"
 #include "Key.h"
-#include "Mapping.h"
+//#include "Mapping.h"
 #include"Color.h"
 #include "json.hpp"
 
